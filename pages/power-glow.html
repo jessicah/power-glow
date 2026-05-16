@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html tabindex="0" data-settings-key="power-glow-settings-v1" lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta http-equiv="Content-Security-Policy" content="script-src-elem	'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://esm.unpkg.com;" />
+	<meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://esm.unpkg.com;" />
+
+	<title>Power Glow</title>
+
+	<script src="/pages/src/preloads.js"></script>
+
+	<script type="module">
+		// OBS
+		import OBSWebSocket from 'https://esm.unpkg.com/obs-websocket-js';
+		const obs = new OBSWebSocket();
+		await obs.connect('ws://localhost:4455');
+
+		const settings = await obs.call('GetInputSettings', { inputName: 'Power Glow' });
+		console.log(settings);
+
+		// Sauce4Zwift
+		import { main, subscribe, glowSettings } from './src/power-glow-settings.mjs';
+		main();
+
+		// Hook up S4Z to OBS source settings
+		let lastColor = 'white';
+
+		async function updateGlow(data) {
+			var color = 'white';
+			
+			if (data.state.power == 0)
+				color = 'white';
+			else if (data.state.power < glowSettings.zone1)
+				color = glowSettings.color1;
+			else if (data.state.power < glowSettings.zone2)
+				color = glowSettings.color2;
+			else if (data.state.power < glowSettings.zone3)
+				color = glowSettings.color3;
+			else if (data.state.power < glowSettings.zone4)
+				color = glowSettings.color4;
+			else if (data.state.power < glowSettings.zone5)
+				color = glowSettings.color5;
+			else if (data.state.power < glowSettings.zone6)
+				color = glowSettings.color6;
+			else if (data.state.power < glowSettings.zone7)
+				color = glowSettings.color7;
+			else
+				color = 'white';
+
+			// Avoid calling OBS too much
+			if (color != lastColor) {
+				lastColor = color;
+				let red = parseInt(color.slice(1, 3), 16);
+				let green = parseInt(color.slice(3, 5), 16);
+				let blue = parseInt(color.slice(5, 7), 16);
+				let argbColor = (red) | (green << 8) | (blue << 16) | (0xff << 24);
+				await obs.call('SetInputSettings', { inputName: 'Power Glow', inputSettings: { glow_fill_color: argbColor} });
+
+				console.log(`Power: ${data.state.power}W, Color: ${color}`);
+			}
+
+			lastColor = color;
+		}
+	</script>
+
+	<link rel="stylesheet" href="./css/common.css" />
+	<style type="text/css">
+		body {
+			--min-bg-opacity: 0;
+			--bg-opacity: 1;
+			--outline-opacity: 0.4;
+			--final-bg-opacity: max(var(--min-bg-opacity) * 100%, var(--bg-opacity) * 100%);
+			color: hsl(var(--theme-fg-hue) var(--theme-fg-sat) var(--theme-fg-light)/100%);
+			background-image: linear-gradient(135deg, hsl(var(--theme-bg-hue) var(--theme-bg-sat) var(--theme-bg-light)/var(--final-bg-opacity)), hsl(var(--theme-bg2-hue) var(--theme-bg2-sat) var(--theme-bg2-light)/var(--final-bg-opacity)));
+		}
+	</style>
+</head>
+
+<body>
+	<div id="titlebar">
+		<header>
+			<div class="title">Power Glow
+			<div class="filler"></div>
+			<div class="buttons">
+				<a class="button open-settings" href="power-glow-settings.html?width=480&height=720&child-window"
+					title="Open settings window"
+					target="groups-settings"><ms>settings</ms></a>
+				<div title="Minimize" class="button minimize electron-only">
+					<ms>minimize</ms>
+				</div>
+				<div title="Close this window" class="button close electron-only">
+					<ms>close</ms>
+				</div>
+			</div>
+		</header>
+	</div>
+	<div id="content" onClick="location.reload()">
+		<h1>Power Zones</h1>
+
+		<div>Zone 1: <span id="zone1"></span></div>
+		<div>Zone 2: <span id="zone2"></span></div>
+		<div>Zone 3: <span id="zone3"></span></div>
+		<div>Zone 4: <span id="zone4"></span></div>
+		<div>Zone 5: <span id="zone5"></span></div>
+		<div>Zone 6: <span id="zone6"></span></div>
+		<div>Zone 7: <span id="zone7"></span></div>
+
+		<h1>Glow Colours</h1>
+
+		<div>Colour 1: <span id="color1"></span></div>
+		<div>Colour 2: <span id="color2"></span></div>
+		<div>Colour 3: <span id="color3"></span></div>
+		<div>Colour 4: <span id="color4"></span></div>
+		<div>Colour 5: <span id="color5"></span></div>
+		<div>Colour 6: <span id="color6"></span></div>
+		<div>Colour 7: <span id="color7"></span></div>
+	</div>
+	<div id="hintbar">
+		<div class="hint"></div>
+	</div>
+</body>
+
+</html>

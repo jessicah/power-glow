@@ -1,0 +1,20 @@
+{
+    "manifest_version": 1,
+    "name": "Power Glow",
+    "description": "Changes glow source colour based on current power",
+    "author": "Jessica Hamilton",
+    "website_url": "https://github.com/jessicah/power-glow",
+    "version": "1.0.0",
+    "web_root": "pages",
+    "windows": [
+        {
+            "file": "pages/power-glow.html",
+            "id": "power-glow",
+            "name": "Power Glow",
+            "description": "Changes glow source colour based on current power",
+            "always_visible": true,
+            "overlay": true,
+            "frame": false
+        }
+    ]
+}
