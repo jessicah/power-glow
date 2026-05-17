@@ -117,7 +117,7 @@
 			else if (data.state.power < glowSettings.zone7)
 				color = glowSettings.color7;
 			else
-				color = 'white';
+				color = glowSettings.color8;
 
 			// Avoid calling OBS too much
 			if (color != lastColor) {
@@ -192,6 +192,7 @@
 		<div>Colour 5: <span id="color5"></span></div>
 		<div>Colour 6: <span id="color6"></span></div>
 		<div>Colour 7: <span id="color7"></span></div>
+		<div>Colour 8: <span id="color8"></span></div>
 
 		<h1>OBS</h1>
 

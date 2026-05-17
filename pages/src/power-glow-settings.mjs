@@ -2,19 +2,20 @@ import * as common from '/pages/src/common.mjs';
 
 common.settingsStore.setDefault({
 	zone1: 0,
-	zone2: 0,
-	zone3: 0,
-	zone4: 0,
-	zone5: 0,
-	zone6: 0,
-	zone7: 0,
+	zone2: 100,
+	zone3: 200,
+	zone4: 300,
+	zone5: 400,
+	zone6: 500,
+	zone7: 600,
 	color1: '#ff0000',
 	color2: '#ffa500',
 	color3: '#ffff00',
 	color4: '#008000',
 	color5: '#0000ff',
 	color6: '#4b0082',
-	color7: '#ee82ee'
+	color7: '#ee82ee',
+	color8: '#82004b',
 });
 
 export const glowSettings = common.settingsStore.get();
@@ -40,6 +41,7 @@ export async function main() {
 	document.querySelector("#color5").style.backgroundColor = glowSettings.color5;
 	document.querySelector("#color6").style.backgroundColor = glowSettings.color6;
 	document.querySelector("#color7").style.backgroundColor = glowSettings.color7;
+	document.querySelector("#color8").style.backgroundColor = glowSettings.color8;
 }
 
 export function subscribeWatching(fn) {
