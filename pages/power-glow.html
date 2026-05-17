@@ -13,10 +13,81 @@
 	<script src="/pages/src/preloads.js"></script>
 
 	<script type="module">
+		console.log('Power Glow page loaded');
+
+		let lastColor = 'white';
+		const obsButton = document.getElementById('obs-connect');
+		const errorElement = document.getElementById('error');
+		const inputElement = document.getElementById('manual-color');
+		
+		// Event handling
+		obsButton.addEventListener('click', connectToOBS);
+		inputElement.addEventListener('change', async () => {
+			let color = inputElement.value;
+			let red = parseInt(color.slice(1, 3), 16);
+			let green = parseInt(color.slice(3, 5), 16);
+			let blue = parseInt(color.slice(5, 7), 16);
+			let argbColor = (red) | (green << 8) | (blue << 16) | (0xff << 24);
+			try
+			{
+				await obs.call('SetInputSettings', { inputName: 'Power Glow', inputSettings: { glow_fill_color: argbColor} });
+
+				console.log(`Color: ${color}`);
+			} catch (error) {
+				console.error('Error setting color in OBS:', error);
+				errorElement.textContent = 'Error setting color in OBS. Make sure you are connected to OBS and the "Power Glow" source exists.';
+			}
+		});
+		
 		// OBS
 		import OBSWebSocket from 'https://esm.unpkg.com/obs-websocket-js';
+
 		const obs = new OBSWebSocket();
-		await obs.connect('ws://localhost:4455');
+
+		async function connectToOBS() {
+			try {
+				obsButton.disabled = true;
+				errorElement.textContent = 'Connecting to OBS...';
+				await obs.connect('ws://localhost:4455');
+				console.log('Connected to OBS');
+				errorElement.textContent = 'Connected to OBS successfully!';
+				obsButton.textContent = 'Disconnect from OBS';
+				obsButton.classList.add('connected');
+				obsButton.classList.remove('disconnected');
+				obsButton.removeEventListener('click', connectToOBS);
+				obsButton.addEventListener('click', disconnectFromOBS);
+				updateGlow({ state: { power: 0 } });
+					
+			} catch (error) {
+				console.error('Failed to connect to OBS:', error);
+				errorElement.textContent = 'Failed to connect to OBS. Make sure OBS is running and the websocket is configured to use port 4455 without authentication.';
+			}
+
+			obsButton.disabled = false;
+		}
+
+		function disconnectFromOBS() {
+			try {
+				obs.disconnect();
+				console.log('Disconnected from OBS');
+				errorElement.textContent = 'Disconnected from OBS.';
+				updateGlow({ state: { power: 0 } });
+			} catch (error) {
+				console.error('Error disconnecting from OBS:', error);
+			}
+
+			obsButton.textContent = 'Connect to OBS';
+			obsButton.classList.remove('connected');
+			obsButton.classList.add('disconnected');
+			obsButton.removeEventListener('click', disconnectFromOBS);
+			obsButton.addEventListener('click', connectToOBS);
+		}
+
+		obs.on('ConnectionClosed', disconnectFromOBS);
+
+		console.log('Attempting to connect to OBS...');
+
+		await connectToOBS();
 
 		const settings = await obs.call('GetInputSettings', { inputName: 'Power Glow' });
 		console.log(settings);
@@ -26,8 +97,6 @@
 		main();
 
 		// Hook up S4Z to OBS source settings
-		let lastColor = 'white';
-
 		async function updateGlow(data) {
 			var color = 'white';
 			
@@ -57,12 +126,18 @@
 				let green = parseInt(color.slice(3, 5), 16);
 				let blue = parseInt(color.slice(5, 7), 16);
 				let argbColor = (red) | (green << 8) | (blue << 16) | (0xff << 24);
-				await obs.call('SetInputSettings', { inputName: 'Power Glow', inputSettings: { glow_fill_color: argbColor} });
 
-				console.log(`Power: ${data.state.power}W, Color: ${color}`);
+				try {
+					await obs.call('SetInputSettings', { inputName: 'Power Glow', inputSettings: { glow_fill_color: argbColor} });
+
+					lastColor = color;
+
+					console.log(`Power: ${data.state.power}W, Color: ${color}`);
+				} catch (error) {
+					console.error('Error setting color in OBS:', error);
+					errorElement.textContent = 'Error setting color in OBS. Make sure you are connected to OBS and the "Power Glow" source exists.';
+				}
 			}
-
-			lastColor = color;
 		}
 	</script>
 
@@ -97,7 +172,7 @@
 			</div>
 		</header>
 	</div>
-	<div id="content" onClick="location.reload()">
+	<div id="content">
 		<h1>Power Zones</h1>
 
 		<div>Zone 1: <span id="zone1"></span></div>
@@ -117,6 +192,14 @@
 		<div>Colour 5: <span id="color5"></span></div>
 		<div>Colour 6: <span id="color6"></span></div>
 		<div>Colour 7: <span id="color7"></span></div>
+
+		<h1>OBS</h1>
+
+		<button type="button" id="obs-connect" class="disconnected">Connect to OBS</button>
+
+		<input type="text" id="manual-color" placeholder="Enter hex color (e.g. #ff0000)" style="display: none"/>
+		
+		<p id="error">Disconnected from OBS.</p>
 	</div>
 	<div id="hintbar">
 		<div class="hint"></div>
